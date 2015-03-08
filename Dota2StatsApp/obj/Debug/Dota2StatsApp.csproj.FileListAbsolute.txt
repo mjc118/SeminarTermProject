@@ -1,0 +1,9 @@
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\bin\Debug\Dota2StatsApp.exe.config
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\bin\Debug\Dota2StatsApp.exe
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\bin\Debug\Dota2StatsApp.pdb
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\obj\Debug\Dota2StatsApp.csprojResolveAssemblyReference.cache
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\obj\Debug\Dota2StatsApp.Properties.Resources.resources
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\obj\Debug\Dota2StatsApp.csproj.GenerateResource.Cache
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\obj\Debug\Dota2StatsApp.exe
+c:\users\mike\documents\visual studio 2013\Projects\Dota2StatsApp\obj\Debug\Dota2StatsApp.pdb
+C:\Users\Mike\documents\visual studio 2013\Projects\Dota2StatsApp\obj\Debug\Dota2StatsApp.HomePage.resources
