@@ -8,11 +8,18 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using MySql.Data.MySqlClient;
+using Microsoft.Win32;
+using System.Runtime.InteropServices;
 
 namespace Dota2StatsApp
 {
     public partial class HomePage : Form
     {
+        //used to suspend redrawing when SendMessage is called with "false" so that form doesn't update in pieces
+        [DllImport("user32.dll")]
+        public static extern int SendMessage(IntPtr hWnd, Int32 wMsg, bool wParam, Int32 lParam);
+        private const int WM_SETREDRAW = 11;
+
         public MySqlConnection DotaDBconn = new MySqlConnection("server=localhost;uid=root;pwd=root;database=dota2;");
 
         public class HeroDetails
@@ -33,11 +40,11 @@ namespace Dota2StatsApp
         public Label[] HeroNameLabel;
         public Label[] TitleLabels;
         public Label[] MatchesPlayedLabels;
-        public PictureBox[] MatchesPlayedRatioBars;
+        public ProgressBar[] MatchesPlayedRatioBars;
         public Label[] WinRateLabels;
-        public PictureBox[] WinRateRatioBars;
+        public ProgressBar[] WinRateRatioBars;
         public Label[] KDAratioLabels;
-        public PictureBox[] KDAratioRatioBars;
+        public ProgressBar[] KDAratioRatioBars;
         public String[] TitleNames = { "Hero", "Matches Played", "Win Rate", "KDA Ratio" };
         //reference TitleNames array to see what column each indice of this array refers to
         public bool[] CurrentColumnSortedBy = { true, false, false, false};
@@ -53,11 +60,11 @@ namespace Dota2StatsApp
             HeroNameLabel = new Label[110];//displays each heros name
             TitleLabels = new Label[4];//displays column titles
             MatchesPlayedLabels = new Label[110];//displays matches played for each hero
-            MatchesPlayedRatioBars = new PictureBox[110];//keeps track of the Colored Rectangle Ratio Bars for Matches Played
+            MatchesPlayedRatioBars = new ProgressBar[110];//keeps track of the Colored Rectangle Ratio Bars for Matches Played
             WinRateLabels = new Label[110];//displays winrate for each hero
-            WinRateRatioBars = new PictureBox[110]; //keeps track of the Colored Rectangle Ratio Bars for WinRate
+            WinRateRatioBars = new ProgressBar[110]; //keeps track of the Colored Rectangle Ratio Bars for WinRate
             KDAratioLabels = new Label[110];//displays KDA ratio for each hero
-            KDAratioRatioBars = new PictureBox[110];//keeps track of the Colored Rectangle Ratio Bars for KDAratio
+            KDAratioRatioBars = new ProgressBar[110];//keeps track of the Colored Rectangle Ratio Bars for KDAratio
             DotaDBconn.Open();
 
             string DBselectString = "SELECT * FROM herodetails";
@@ -156,15 +163,18 @@ namespace Dota2StatsApp
                 this.Controls.SetChildIndex(MatchesPlayedLabels[i], 0);
 
                 //Add our bar that is a ratio of MatchesPlayed for specific hero versus hero with highest Matches Played
-                MatchesPlayedRatioBars[i] = new PictureBox();
+                MatchesPlayedRatioBars[i] = new ProgressBar();
 
-                MatchesPlayedRatioBars[i].BackColor = Color.Red;
+                MatchesPlayedRatioBars[i].Style = ProgressBarStyle.Continuous;
+                MatchesPlayedRatioBars[i].ForeColor = Color.Red;
+                if (i % 2 == 0) { MatchesPlayedRatioBars[i].BackColor = SystemColors.InactiveCaptionText; }
+                else { MatchesPlayedRatioBars[i].BackColor = SystemColors.WindowFrame; }
 
-                Double FillRatio = (150 * (Convert.ToDouble(Heroes[i].MatchesPlayed)/MaxMatchesPlayed));
+                Double FillRatio = (100 *(Convert.ToDouble(Heroes[i].MatchesPlayed)/MaxMatchesPlayed));
 
-                MatchesPlayedRatioBars[i].BackgroundImageLayout = ImageLayout.Zoom;
+                MatchesPlayedRatioBars[i].Value = Convert.ToInt16(FillRatio);
                 MatchesPlayedRatioBars[i].Location = new System.Drawing.Point(305, 100 + (i * 45) + (i * 10));
-                MatchesPlayedRatioBars[i].Size = new System.Drawing.Size(Convert.ToInt16(FillRatio), 8);
+                MatchesPlayedRatioBars[i].Size = new System.Drawing.Size(150, 8);
                 MatchesPlayedRatioBars[i].TabStop = false;
                 this.Controls.Add(MatchesPlayedRatioBars[i]);
                 this.Controls.SetChildIndex(MatchesPlayedRatioBars[i], 0);
@@ -192,20 +202,26 @@ namespace Dota2StatsApp
                 this.Controls.SetChildIndex(WinRateLabels[i], 0);
 
                 //Add our bar that is a ratio of WinRate for specific hero versus hero with highest WinRate
-                WinRateRatioBars[i] = new PictureBox();
+                WinRateRatioBars[i] = new ProgressBar();
 
-                WinRateRatioBars[i].BackColor = Color.Red;
+                WinRateRatioBars[i].Style = ProgressBarStyle.Continuous;
+                WinRateRatioBars[i].ForeColor = Color.Red;
+                if (i % 2 == 0) { WinRateRatioBars[i].BackColor = SystemColors.InactiveCaptionText; }
+                else { WinRateRatioBars[i].BackColor = SystemColors.WindowFrame; }
+
                 if (!Double.IsNaN(Heroes[i].WinRate))
                 {
-                    Double FillRatio = (115 * (Heroes[i].WinRate / MaxWinRate));
-
-                    WinRateRatioBars[i].BackgroundImageLayout = ImageLayout.Zoom;
-                    WinRateRatioBars[i].Location = new System.Drawing.Point(500, 100 + (i * 45) + (i * 10));
-                    WinRateRatioBars[i].Size = new System.Drawing.Size(Convert.ToInt16(FillRatio), 8);
-                    WinRateRatioBars[i].TabStop = false;
-                    this.Controls.Add(WinRateRatioBars[i]);
-                    this.Controls.SetChildIndex(WinRateRatioBars[i], 0);
+                    Double FillRatio = (100 * (Heroes[i].WinRate / MaxWinRate));
+                    WinRateRatioBars[i].Value = Convert.ToInt16(FillRatio);
                 }
+                else { WinRateRatioBars[i].Value = 0; }
+
+                WinRateRatioBars[i].Location = new System.Drawing.Point(500, 100 + (i * 45) + (i * 10));
+                WinRateRatioBars[i].Size = new System.Drawing.Size(115, 8);
+                WinRateRatioBars[i].TabStop = false;
+
+                this.Controls.Add(WinRateRatioBars[i]);
+                this.Controls.SetChildIndex(WinRateRatioBars[i], 0);
             }
 
             //Add our KDA Ratio labels to screen
@@ -230,20 +246,25 @@ namespace Dota2StatsApp
                 this.Controls.SetChildIndex(KDAratioLabels[i], 0);
 
                 //Add our bar that is a ratio of KDAratio for specific hero versus hero with highest KDAratio
-                KDAratioRatioBars[i] = new PictureBox();
+                KDAratioRatioBars[i] = new ProgressBar();
 
-                KDAratioRatioBars[i].BackColor = Color.Red;
+                KDAratioRatioBars[i].Style = ProgressBarStyle.Continuous;
+                KDAratioRatioBars[i].ForeColor = Color.Red;
+                if (i % 2 == 0) { KDAratioRatioBars[i].BackColor = SystemColors.InactiveCaptionText; }
+                else { KDAratioRatioBars[i].BackColor = SystemColors.WindowFrame; }
+
                 if (!Double.IsNaN(Heroes[i].KDAratio))
                 {
-                    Double FillRatio = (125 * (Heroes[i].KDAratio / MaxKDAratio));
-
-                    KDAratioRatioBars[i].BackgroundImageLayout = ImageLayout.Zoom;
-                    KDAratioRatioBars[i].Location = new System.Drawing.Point(625, 100 + (i * 45) + (i * 10));
-                    KDAratioRatioBars[i].Size = new System.Drawing.Size(Convert.ToInt16(FillRatio), 8);
-                    KDAratioRatioBars[i].TabStop = false;
-                    this.Controls.Add(KDAratioRatioBars[i]);
-                    this.Controls.SetChildIndex(KDAratioRatioBars[i], 0);
+                    Double FillRatio = (100 * (Heroes[i].KDAratio / MaxKDAratio));
+                    KDAratioRatioBars[i].Value = Convert.ToInt16(FillRatio);
                 }
+                else { KDAratioRatioBars[i].Value = 0; }
+
+                KDAratioRatioBars[i].Location = new System.Drawing.Point(625, 100 + (i * 45) + (i * 10));
+                KDAratioRatioBars[i].Size = new System.Drawing.Size(125, 8);
+                KDAratioRatioBars[i].TabStop = false;
+                this.Controls.Add(KDAratioRatioBars[i]);
+                this.Controls.SetChildIndex(KDAratioRatioBars[i], 0);
             }
 
             //Add our Labels to the Screen
@@ -294,6 +315,7 @@ namespace Dota2StatsApp
                 if (CurrentColumnSortedBy[0])
                 {
                     Array.Sort(Heroes, (x, y) => y.HeroName.CompareTo(x.HeroName));
+                    CurrentColumnSortedBy[0] = false;
                 }
                 else //sort by hero A-Z and set the boolean array to say which column we are sorted by
                 {
@@ -308,6 +330,7 @@ namespace Dota2StatsApp
                 if (CurrentColumnSortedBy[1])
                 {
                     Array.Sort(Heroes, (x, y) => x.MatchesPlayed.CompareTo(y.MatchesPlayed));
+                    CurrentColumnSortedBy[1] = false;
                 }
                 else//sort by Matches Played descending order, and set boolean array appropriately
                 {
@@ -322,6 +345,7 @@ namespace Dota2StatsApp
                 if (CurrentColumnSortedBy[2])
                 {
                     Array.Sort(Heroes, (x, y) => x.WinRate.CompareTo(y.WinRate));
+                    CurrentColumnSortedBy[2] = false;
                 }
                 else//sort by WinRate descending order, and set boolean array appropriately
                 {
@@ -333,9 +357,10 @@ namespace Dota2StatsApp
             else if (WhichLabel.Text == "KDA Ratio")
             {
                 //if we are already sorted by KDARatio, sort it in ascending orer
-                if (CurrentColumnSortedBy[2])
+                if (CurrentColumnSortedBy[3])
                 {
                     Array.Sort(Heroes, (x, y) => x.KDAratio.CompareTo(y.KDAratio));
+                    CurrentColumnSortedBy[3] = false;
                 }
                 else//sort by KDARatio descending order, and set boolean array appropriately
                 {
@@ -348,34 +373,24 @@ namespace Dota2StatsApp
             {
                 Console.WriteLine("Error with Label Mouse Click Event");
             }
-            Console.WriteLine("Before {0}", this.Controls.Count);
-            ReDrawScreen();
-            Console.WriteLine("After {0}",this.Controls.Count);
-            //throw new NotImplementedException();
+            
+            ReOrderHeroes();
         }
 
-        public void ReDrawScreen()
+        public void ReOrderHeroes()
         {
+            //send message to suspend drawing to form until everything is done
+            SendMessage(Handle, WM_SETREDRAW, false, 0);
+
             //Add our matches played labels to screen
             for (int i = 0; i < MatchesPlayedLabels.Length; ++i)
             {
                 //change our labels text to be the new text
                 MatchesPlayedLabels[i].Text = Heroes[i].MatchesPlayed.ToString("N0");
                
-                //Add our bar that is a ratio of MatchesPlayed for specific hero versus hero with highest Matches Played
-                this.Controls.Remove(MatchesPlayedRatioBars[i]);
-                MatchesPlayedRatioBars[i] = new PictureBox();
+                Double FillRatio = (100 * (Convert.ToDouble(Heroes[i].MatchesPlayed) / MaxMatchesPlayed));
 
-                MatchesPlayedRatioBars[i].BackColor = Color.Red;
-
-                Double FillRatio = (150 * (Convert.ToDouble(Heroes[i].MatchesPlayed) / MaxMatchesPlayed));
-
-                MatchesPlayedRatioBars[i].BackgroundImageLayout = ImageLayout.Zoom;
-                MatchesPlayedRatioBars[i].Location = new System.Drawing.Point(305, 100 + (i * 45) + (i * 10));
-                MatchesPlayedRatioBars[i].Size = new System.Drawing.Size(Convert.ToInt16(FillRatio), 8);
-                MatchesPlayedRatioBars[i].TabStop = false;
-                this.Controls.Add(MatchesPlayedRatioBars[i]);
-                this.Controls.SetChildIndex(MatchesPlayedRatioBars[i], 0);
+                MatchesPlayedRatioBars[i].Value = Convert.ToInt16(FillRatio);
             }
 
             //Add our Win Rate Labels to screen
@@ -384,24 +399,13 @@ namespace Dota2StatsApp
                 if (Double.IsNaN(Heroes[i].WinRate)) { WinRateLabels[i].Text = "0%"; }
                 else { WinRateLabels[i].Text = Heroes[i].WinRate.ToString() + "%"; }
 
-                //Add our bar that is a ratio of WinRate for specific hero versus hero with highest WinRate
-                this.Controls.Remove(WinRateRatioBars[i]);
-                WinRateRatioBars[i] = new PictureBox();
-
-                WinRateRatioBars[i].BackColor = Color.Red;
                 if (!Double.IsNaN(Heroes[i].WinRate))
                 {
-                    //this.Controls.Remove(WinRateRatioBars[i]);
-
-                    Double FillRatio = (115 * (Heroes[i].WinRate / MaxWinRate));
-
-                    WinRateRatioBars[i].BackgroundImageLayout = ImageLayout.Zoom;
-                    WinRateRatioBars[i].Location = new System.Drawing.Point(500, 100 + (i * 45) + (i * 10));
-                    WinRateRatioBars[i].Size = new System.Drawing.Size(Convert.ToInt16(FillRatio), 8);
-                    WinRateRatioBars[i].TabStop = false;
-                    this.Controls.Add(WinRateRatioBars[i]);
-                    this.Controls.SetChildIndex(WinRateRatioBars[i], 0);
+                    Double FillRatio = (100 * (Heroes[i].WinRate / MaxWinRate));
+                    WinRateRatioBars[i].Value = Convert.ToInt16(FillRatio);
                 }
+                else { WinRateRatioBars[i].Value = 0; }
+
             }
 
             //Add our KDA Ratio labels to screen
@@ -410,24 +414,12 @@ namespace Dota2StatsApp
                 if (Double.IsNaN(Heroes[i].KDAratio)) { KDAratioLabels[i].Text = "0"; }
                 else { KDAratioLabels[i].Text = Heroes[i].KDAratio.ToString(); }
 
-                //Add our bar that is a ratio of KDAratio for specific hero versus hero with highest KDAratio
-                this.Controls.Remove(KDAratioRatioBars[i]);
-                KDAratioRatioBars[i] = new PictureBox();
-
-                KDAratioRatioBars[i].BackColor = Color.Red;
                 if (!Double.IsNaN(Heroes[i].KDAratio))
                 {
-                    //this.Controls.Remove(KDAratioRatioBars[i]);
-
-                    Double FillRatio = (125 * (Heroes[i].KDAratio / MaxKDAratio));
-
-                    KDAratioRatioBars[i].BackgroundImageLayout = ImageLayout.Zoom;
-                    KDAratioRatioBars[i].Location = new System.Drawing.Point(625, 100 + (i * 45) + (i * 10));
-                    KDAratioRatioBars[i].Size = new System.Drawing.Size(Convert.ToInt16(FillRatio), 8);
-                    KDAratioRatioBars[i].TabStop = false;
-                    this.Controls.Add(KDAratioRatioBars[i]);
-                    this.Controls.SetChildIndex(KDAratioRatioBars[i], 0);
+                    Double FillRatio = (100 * (Heroes[i].KDAratio / MaxKDAratio));
+                    KDAratioRatioBars[i].Value = Convert.ToInt16(FillRatio);
                 }
+                else { KDAratioRatioBars[i].Value = 0; }
             }
 
             //Add our Labels to the Screen
@@ -442,6 +434,10 @@ namespace Dota2StatsApp
                 string HeroPicLocation = @"..\..\Resources\Dota2HeroPics\" + Heroes[i].HeroName + ".png";
                 HeroPictureBox[i].Load(HeroPicLocation);
             }
+
+            //send message to stop suspending of drawing to form
+            SendMessage(Handle, WM_SETREDRAW, true, 0);
+            Refresh();
         }
     }
 }
